@@ -29,6 +29,12 @@ const projectSchema = new mongoose.Schema({
     users : {
         type : [Schema.Types.ObjectId],
         ref : "User"
+    },
+
+    tasks : {
+        type : [Schema.Types.ObjectId],
+        ref : "Task",
+        default : []
     }
 },{
     timestamps : true
@@ -46,6 +52,7 @@ projectSchema.pre('save',async function (next) {
     }
     next();
 })
+
 
 
 export default mongoose.model('Project', projectSchema);
