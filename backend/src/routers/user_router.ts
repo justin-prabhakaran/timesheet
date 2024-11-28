@@ -25,7 +25,7 @@ userRouter.post('/register', async (req,res)=>{
 
        const {password : _, ...others}= user.toObject()
 
-       return res.status(200).json({...others,token:token})
+       return res.status(200).json({...others,token})
    }catch (e) {
         console.error(e);
         res.status(500).json({error : "Internal Server Error !!"});
@@ -43,7 +43,7 @@ userRouter.post('/login', async (req,res)=>{
         if(!user){
             return res.status(401).json({error : "User Not Found"});
         }
-        
+
         const match = await bcrypt.compare(password,user.password)
         if(!match){
             return res.status(401).json({error : "User Not Found"});
@@ -51,8 +51,10 @@ userRouter.post('/login', async (req,res)=>{
 
         const token = jwt.sign({id : user.id, role : user.role},process.env.SECRET_KEY!,{expiresIn : "1h"});
 
+        const {password : _, ...others} = user.toObject();
+
         return res.status(200).json({
-            userName,
+            ...others,
             token
         });
     }catch (e){
