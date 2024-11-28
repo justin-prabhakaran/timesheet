@@ -6,15 +6,15 @@ import Project from "../model/project";
 const taskRouter = Router();
 
 // @ts-ignore
-taskRouter.get('/tasks/:projectId',authMiddleware,async (req,res)=>{
+taskRouter.get('/tasks/:project',authMiddleware,async (req,res)=>{
     try {
-        const {projectId} = req.params;
+        const {project} = req.params;
 
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        const filter: any = { projectId };
+        const filter: any = { project };
 
         if (req.query.status) {
             filter.status = req.query.status;
@@ -39,7 +39,7 @@ taskRouter.get('/tasks/:projectId',authMiddleware,async (req,res)=>{
                 status: task.status,
                 expectedHours: task.expectedHours,
                 actualHours: task.actualHours,
-                projectId: task.projectId
+                projectId: task.project
             }))
         });
 
@@ -85,7 +85,7 @@ taskRouter.post('/task',authMiddleware, async(req,res)=>{
             task: {
                 id: newTask._id,
                 title: newTask.title,
-                projectId: newTask.projectId,
+                projectId: newTask.project,
                 status: newTask.status
             }
         });

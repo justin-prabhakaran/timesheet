@@ -1,70 +1,40 @@
-import {Schema} from "mongoose";
-import * as mongoose from "mongoose";
-import Project from "./project";
+import { Schema, model } from 'mongoose';
 
-const taskSchema = new mongoose.Schema({
-    title: {
-        type: String,
-        required: true,
+const taskSchema = new Schema(
+    {
+        title: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        description: {
+            type: String,
+            trim: true,
+        },
+        status: {
+            type: String,
+            enum: ['completed', 'pending', 'in-progress'],
+            default: 'pending',
+        },
+        expectedHours: {
+            type: Number,
+            min: 0,
+            required: true,
+        },
+        actualHours: {
+            type: Number,
+            min: 0,
+            default: 0,
+        },
+        project: {
+            type: Schema.Types.ObjectId,
+            ref: 'Project',
+            required: true,
+        },
     },
-
-    description: {
-        type: String,
-    },
-
-    status: {
-        type: String,
-        enum: ['completed', 'pending']
-    },
-
-    expectedHours : {
-        type: Number,
-    },
-
-    actualHours : {
-        type : Number,
-    },
-
-    projectId : {
-        required : true,
-        type : Schema.Types.ObjectId,
-        ref : 'Project',
-
+    {
+        timestamps: true,
     }
+);
 
-})
-
-
-taskSchema.post('save', async function(task) {
-    try {
-
-        await Project.findByIdAndUpdate(
-            task.projectId,
-            {
-                $addToSet: { tasks: task._id }
-            },
-            { new: true }
-        );
-    } catch (error) {
-        console.error('Error updating project with new task:', error);
-    }
-});
-
-
-taskSchema.post('findOneAndUpdate', async function(task) {
-    if (task && task.projectId) {
-        try {
-            await Project.findByIdAndUpdate(
-                task.projectId,
-                {
-                    $addToSet: { tasks: task._id }
-                },
-                { new: true }
-            );
-        } catch (error) {
-            console.error('Error updating project with updated task:', error);
-        }
-    }
-});
-
-export default mongoose.model("Task", taskSchema);
+export default model('Task', taskSchema);

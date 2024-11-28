@@ -32,10 +32,6 @@ projectRouter.get('/projects',authMiddleware,async (req,res)=>{
                     path : 'users',
                     select : "id userName department businessUnit role"
                 })
-                .populate({
-                    path : 'tasks',
-                    select : "id title description status"
-                })
                 .skip(skip)
                 .limit(limit)
                 .lean();
@@ -52,7 +48,6 @@ projectRouter.get('/projects',authMiddleware,async (req,res)=>{
                     businessUnit: project.businessUnit,
                     type: project.type,
                     users: project.users,
-                    tasks :project.tasks,
                      createdAt: project.createdAt
                 }))
             })
@@ -65,10 +60,6 @@ projectRouter.get('/projects',authMiddleware,async (req,res)=>{
                 .populate({
                     path : 'users',
                     select : 'userName department businessUnit role'
-                })
-                .populate({
-                    path : 'tasks',
-                    select : "id title description status"
                 })
                 .skip(skip)
                 .limit(limit)
@@ -91,7 +82,6 @@ projectRouter.get('/projects',authMiddleware,async (req,res)=>{
                     businessUnit: project.businessUnit,
                     type: project.type,
                     users: project.users,
-                    tasks : project.tasks,
                     createdAt: project.createdAt
                 }))
             });
@@ -106,7 +96,7 @@ projectRouter.get('/projects',authMiddleware,async (req,res)=>{
 projectRouter.post('/add',authMiddleware,async (req,res)=>{
     try{
         if(req.user?.role !== 'admin')
-            return res.status(403).json({error : "Unauthorized !!"});
+             return res.status(403).json({error : "Unauthorized !!"});
 
         const {name, clientName, address, department, businessUnit, type} = req.body;
 
