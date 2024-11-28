@@ -1,5 +1,9 @@
 {
   "devDependencies": {
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@types/express": "^5.0.0",
+    "@types/mongoose": "^5.11.96"
   }
 }
