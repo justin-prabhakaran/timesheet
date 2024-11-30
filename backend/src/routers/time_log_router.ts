@@ -18,7 +18,6 @@ timeLogRouter.post("/add",authMiddleware, async (req, res) => {
             hoursSpent,
             taskStatus: taskStatus || 'In Progress',
         });
-
         return res.status(200).json(newLog);
 
     }catch (e){
