@@ -38,14 +38,13 @@ const timeLogSchema = new mongoose.Schema(
     }
 );
 
-// Indexes for better performance
 timeLogSchema.index({ user: 1, date: -1 });
 timeLogSchema.index({ project: 1, date: -1 });
 
-// Post-save hook to update task
+
 timeLogSchema.post('save', async function (log) {
     try {
-        // Find the associated task
+
         const Task = mongoose.model('Task');
         const task = await Task.findById(log.task);
 
@@ -53,10 +52,8 @@ timeLogSchema.post('save', async function (log) {
             throw new Error('Associated task not found');
         }
 
-        // Update actual hours spent on the task
         task.actualHours += log.hoursSpent;
 
-        // If the log indicates completion, mark the task as completed
         if (log.taskStatus === 'completed') {
             task.status = 'completed';
         } else {
