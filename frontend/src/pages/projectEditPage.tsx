@@ -9,7 +9,7 @@ import { Department, User } from "@/model/user.ts";
 import { projectStore } from "@/zustand/store/project_store.ts";
 import { useEffect, useState } from "react";
 import {userStore} from "@/zustand/store/user_store.ts";
-import {Task} from "@/model/task.ts";
+import {Task, TaskStatus} from "@/model/task.ts";
 import {taskStore} from "@/zustand/store/task_store.ts";
 
 
@@ -26,6 +26,7 @@ export default function ProjectEditPage() {
 
 
     const getAllTasks = taskStore(state => state.getAllTasks);
+    const addTask = taskStore(state => state.addTask);
 
     const [project, setProject] = useState({
         name: "",
@@ -36,23 +37,27 @@ export default function ProjectEditPage() {
         address: "",
     });
 
+    const [task, setTask] = useState({
+        title : "",
+        description : "",
+        expectedHours : 0
+    });
+
+    const taskStoreData = taskStore(state => state.tasks);
+
     const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
     const [allUsers, setAllUsers] = useState<User[]>([])
     const [tasks, setTasks] = useState<Task[]>([]);
 
     useEffect(() => {
-        getAllTasks({
-            token : currentUser?.token || "",
-            projectId : projectId || "",
-        }).then((tasks) =>{
-            setTasks(tasks);
+        setTasks(taskStoreData);
+    }, [taskStoreData]);
+
+    useEffect(() => {
+        getAllUsers(currentUser?.token || "").then((users)=>{
+            setAllUsers(users);
         });
-
-    }, [currentUser?.token, getAllTasks, projectId,tasks]);
-
-
-
-
+    }, []);
 
     useEffect(() => {
         if (projectId && projectId !== "new") {
@@ -69,15 +74,20 @@ export default function ProjectEditPage() {
                 setSelectedUsers(selectedProject.users);
             }
         }
-    }, [projectId, projects]);
-
-    useEffect(() => {
-        getAllUsers(currentUser?.token || "").then((users) =>{
-            setAllUsers(users);
-        });
     }, []);
 
-    const handleInputChange = (field: string, value: any) => {
+    useEffect(() => {
+       if(projectId && projectId !== "new"){
+           getAllTasks({
+               token: currentUser?.token || "",
+               projectId: projectId,
+           }).then((tasks) => {
+               setTasks(tasks);
+           });
+       }
+    }, []);
+
+    const handleInputChange = (field: string, value: unknown) => {
         setProject((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -125,9 +135,10 @@ export default function ProjectEditPage() {
                     </div>
 
                     <div className="flex flex-row gap-9 mt-6">
-                        <Select  value={project.businessUnit.toString()} onValueChange={(value) => handleInputChange("businessUnit", parseInt(value))}>
+                        <Select value={project.businessUnit.toString()}
+                                onValueChange={(value) => handleInputChange("businessUnit", parseInt(value))}>
                             <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Business Unit" />
+                                <SelectValue placeholder="Business Unit"/>
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="1">Unit 1</SelectItem>
@@ -136,9 +147,10 @@ export default function ProjectEditPage() {
                             </SelectContent>
                         </Select>
 
-                        <Select value={project.department} onValueChange={(value) => handleInputChange("department", value)}>
+                        <Select value={project.department}
+                                onValueChange={(value) => handleInputChange("department", value)}>
                             <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Department" />
+                                <SelectValue placeholder="Department"/>
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={Department.CSE}>CSE</SelectItem>
@@ -149,7 +161,7 @@ export default function ProjectEditPage() {
 
                         <Select value={project.type} onValueChange={(value) => handleInputChange("type", value)}>
                             <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Type" />
+                                <SelectValue placeholder="Type"/>
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="type1">Type 1</SelectItem>
@@ -161,7 +173,7 @@ export default function ProjectEditPage() {
                 </div>
 
                 {/* Users Section */}
-                <Separator orientation="horizontal" className="mt-5 w-full" />
+                <Separator orientation="horizontal" className="mt-5 w-full"/>
                 <h1 className="mt-5 text-2xl font-bold">Users</h1>
                 <div className="grid grid-cols-3 gap-4 px-4 py-4">
                     {selectedUsers.map((user, index) => (
@@ -180,7 +192,7 @@ export default function ProjectEditPage() {
                 </div>
 
                 {/*all users*/}
-                <Separator orientation="horizontal" className="mt-5 w-full" />
+                <Separator orientation="horizontal" className="mt-5 w-full"/>
                 {/*<h1 className="mt-5 text-2xl font-bold">Users</h1>*/}
                 <div className="grid grid-cols-3 gap-4 px-4 py-4">
                     {allUsers.map((user, index) => (
@@ -199,8 +211,51 @@ export default function ProjectEditPage() {
                 </div>
 
                 {/* Tasks Section */}
-                <Separator className="my-10" orientation="horizontal" />
+                <Separator className="my-10" orientation="horizontal"/>
                 <h1 className="font-bold text-2xl">Tasks</h1>
+
+                <div className={"flex justify-around items-end my-4 gap-4"}>
+                    <div className={"flex flex-row gap-4"}>
+                        <div className={"flex flex-col gap-2"}>
+                            <Label htmlFor={"title"}>Title</Label>
+                            <Input value={task.title} onChange={(e)=>{setTask({...task,title: e.target.value})}} id={"title"} type={"text"} placeholder={"Ex.User Management"}/>
+                        </div>
+
+                        <div className={"flex flex-col gap-2"}>
+                            <Label htmlFor={"description"}>Description</Label>
+                            <Input value={task.description}
+                                   onChange={(e)=>{
+                                       setTask({...task,description: e.target.value});
+                                   }}
+                                   id={"description"} type={"text"} placeholder={"...."}/>
+                        </div>
+
+                        <div className={"flex flex-col gap-2"}>
+                            <Label htmlFor={"expectedhr"}>Expected Hours</Label>
+                            <Input value={task.expectedHours} onChange={(e)=>{
+                                setTask({...task,expectedHours: Number.parseInt(e.target.value) });
+                            }} id={"expectedhr"} type={"number"} placeholder={"Ex.12"}/>
+                        </div>
+
+                    </div>
+
+                    <Button type={"button"} onClick={async ()=>{
+                       if(projectId && projectId !== "new") {
+                           const status = await addTask({
+                               projectId: projectId,
+                               token: currentUser?.token || "",
+                               expectedHours: task.expectedHours,
+                               actualHours: 0,
+                               status: TaskStatus.PENDING,
+                               description: task.description,
+                               title: task.title
+                           });
+                           console.log(status);
+                       }
+                    }} variant={"outline"}>add</Button> {/*this button is rebuilds or refresh the page why ?? how to remove that*/}
+
+                </div>
+
                 <div className="m-4 grid grid-cols-3 gap-4">
                     {tasks.map((task, index) => (
                         <Card key={index}>
@@ -219,25 +274,25 @@ export default function ProjectEditPage() {
             </form>
 
             <div className="flex justify-center my-10">
-                <Button onClick={ async ()=>{
-                    if(projectId && projectId === "new"){
-                       const status =  await addProject({
-                           token : currentUser?.token || "",
-                            name : project.name,
-                            address : project.address,
-                            businessUnit : project.businessUnit,
-                            type : project.type,
-                            clientName : project.clientName,
-                            department : project.department
+                <Button type={"button"} onClick={async () => {
+                    if (projectId && projectId === "new") {
+                        const status = await addProject({
+                            token: currentUser?.token || "",
+                            name: project.name,
+                            address: project.address,
+                            businessUnit: project.businessUnit,
+                            type: project.type,
+                            clientName: project.clientName,
+                            department: project.department
                         });
 
-                       console.log(status);
-                    }else if(projectId && projectId !== "new"){
+                        console.log(status);
+                    } else if (projectId && projectId !== "new") {
                         const status = await updateProject({
-                            token : currentUser?.token || "",
-                            projectId : projectId,
-                            name : project.name,
-                            address : project.address,
+                            token: currentUser?.token || "",
+                            projectId: projectId,
+                            name: project.name,
+                            address: project.address,
                             businessUnit : project.businessUnit,
                             type : project.type,
                             clientName : project.clientName,
