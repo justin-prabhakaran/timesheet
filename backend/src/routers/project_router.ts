@@ -1,6 +1,7 @@
 import {Router} from "express";
 import authMiddleware from "../middleware/auth_middleware";
 import Project from "../model/project";
+import mongoose from "mongoose";
 
 const projectRouter = Router();
 
@@ -111,10 +112,7 @@ projectRouter.post('/add',authMiddleware,async (req,res)=>{
 
         await project.save();
 
-        return res.status(200).json({project : {
-            id : project._id,
-                name : project.name
-            }})
+        return res.status(200).json(project.toObject());
     }catch(e){
         console.error(e)
         return res.status(500).json({error : "Internal Server Error !!"})
@@ -130,8 +128,9 @@ projectRouter.put('/update/:id',authMiddleware, async (req,res)=>{
         }
        const { id } = req.params;
        const { name, clientName, address, department, businessUnit, type } = req.body;
+       console.log(id)
        const project = await Project.findById(id);
-
+       console.log(project);
        if (!project) {
            return res.status(404).json({ error: "Project not found" });
        }
@@ -153,5 +152,29 @@ projectRouter.put('/update/:id',authMiddleware, async (req,res)=>{
    }
 });
 
+// @ts-ignore
+projectRouter.delete('/delete/:id', authMiddleware, async (req, res) => {
+    try {
+
+        if (req.user?.role !== 'admin') {
+            return res.status(403).json({ error: "Unauthorized !!" });
+        }
+
+        const { id } = req.params;
+
+        const deletedProject = await Project.findByIdAndDelete(id);
+
+        if (!deletedProject) {
+            return res.status(404).json({ error: "Project not found !!" });
+        }
 
 
+        return res.status(200).json(deletedProject);
+    } catch (e) {
+        console.error("Error deleting project:", e);
+        return res.status(500).json({ error: "Internal server error !!" });
+    }
+});
+
+
+export default projectRouter;
