@@ -30,6 +30,7 @@ export function ProjectManagement() {
 
     const projectsFromStore = projectStore(state => state.projects);
     const user = userStore((state) => state.user);
+
     const navigate = useNavigate();
 
     useEffect(() => {

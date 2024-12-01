@@ -6,15 +6,15 @@ import Project from "../model/project";
 const taskRouter = Router();
 
 // @ts-ignore
-taskRouter.get('/tasks/:project',authMiddleware,async (req,res)=>{
+taskRouter.get('/tasks/:projectId',authMiddleware,async (req,res)=>{
     try {
-        const {project} = req.params;
+        const {projectId} = req.params;
 
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        const filter: any = { project };
+        const filter: any = { projectId };
 
         if (req.query.status) {
             filter.status = req.query.status;
@@ -50,7 +50,7 @@ taskRouter.get('/tasks/:project',authMiddleware,async (req,res)=>{
 })
 
 // @ts-ignore
-taskRouter.post('/task',authMiddleware, async(req,res)=>{
+taskRouter.post('/add',authMiddleware, async(req,res)=>{
     try {
         if (req.user?.role !== 'admin') {
             return res.status(403).json({ error: "Unauthorized to create tasks" });
@@ -73,7 +73,7 @@ taskRouter.post('/task',authMiddleware, async(req,res)=>{
         const newTask = new Task({
             title,
             description,
-            projectId,
+            project : projectId,
             status,
             expectedHours,
             actualHours
@@ -81,14 +81,7 @@ taskRouter.post('/task',authMiddleware, async(req,res)=>{
 
         await newTask.save();
 
-        return res.status(201).json({
-            task: {
-                id: newTask._id,
-                title: newTask.title,
-                projectId: newTask.project,
-                status: newTask.status
-            }
-        });
+        return res.status(200).json(newTask.toObject());
 
     }catch (e) {
         console.error(e);
