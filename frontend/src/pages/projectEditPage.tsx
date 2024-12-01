@@ -9,6 +9,8 @@ import { Department, User } from "@/model/user.ts";
 import { projectStore } from "@/zustand/store/project_store.ts";
 import { useEffect, useState } from "react";
 import {userStore} from "@/zustand/store/user_store.ts";
+import {Task} from "@/model/task.ts";
+import {taskStore} from "@/zustand/store/task_store.ts";
 
 
 export default function ProjectEditPage() {
@@ -23,6 +25,8 @@ export default function ProjectEditPage() {
     const updateProject = projectStore(state => state.updateProject);
 
 
+    const getAllTasks = taskStore(state => state.getAllTasks);
+
     const [project, setProject] = useState({
         name: "",
         department: "",
@@ -34,9 +38,21 @@ export default function ProjectEditPage() {
 
     const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
     const [allUsers, setAllUsers] = useState<User[]>([])
-    const [tasks, setTasks] = useState([
-        { title: "title1", description: "description 1", expectedHr: 12 },
-    ]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+
+    useEffect(() => {
+        getAllTasks({
+            token : currentUser?.token || "",
+            projectId : projectId || "",
+        }).then((tasks) =>{
+            setTasks(tasks);
+        });
+
+    }, [currentUser?.token, getAllTasks, projectId,tasks]);
+
+
+
+
 
     useEffect(() => {
         if (projectId && projectId !== "new") {
@@ -65,9 +81,6 @@ export default function ProjectEditPage() {
         setProject((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleAddTask = (task: { title: string; description: string; expectedHr: number }) => {
-        setTasks((prevTasks) => [...prevTasks, task]);
-    };
 
     return (
         <div className="p-4">
@@ -196,7 +209,9 @@ export default function ProjectEditPage() {
                                 <CardDescription>{task.description}</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <h1>Expected Hours: {task.expectedHr}</h1>
+                                <h1>Expected Hours: {task.expectedHours}</h1>
+                                <h1>Status: {task.status}</h1>
+
                             </CardContent>
                         </Card>
                     ))}
