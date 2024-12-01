@@ -2,13 +2,26 @@ import {Router} from "express";
 import authMiddleware from "../middleware/auth_middleware";
 import Task from "../model/task";
 import TimeLog from "../model/time_log";
+import Project from "../model/project";
 
 const timeLogRouter = Router();
 
 // @ts-ignore
-timeLogRouter.post("/add",authMiddleware, async (req, res) => {
+timeLogRouter.post("/add", authMiddleware, async (req, res) => {
     try {
         const { project, task, date, hoursSpent, taskStatus } = req.body;
+
+        // Validate project and task references
+        const projectExists = await Project.findById(project);
+        const taskExists = await Task.findById(task);
+
+        if (!projectExists) {
+            return res.status(400).json({ error: "Invalid project ID" });
+        }
+
+        if (!taskExists) {
+            return res.status(400).json({ error: "Invalid task ID" });
+        }
 
         const newLog = await TimeLog.create({
             user: req.user?.id,
@@ -16,15 +29,16 @@ timeLogRouter.post("/add",authMiddleware, async (req, res) => {
             task,
             date: date || new Date(),
             hoursSpent,
-            taskStatus: taskStatus || 'progress',
+            taskStatus: taskStatus || "progress",
         });
-        return res.status(200).json(newLog);
 
-    }catch (e){
+        return res.status(200).json(newLog);
+    } catch (e) {
         console.error(e);
-         return res.status(500).json({error : "Internal Server Error !!"});
+        return res.status(500).json({ error: "Internal Server Error" });
     }
 });
+
 
 // @ts-ignore
 timeLogRouter.get('/logs/:user',authMiddleware, async (req, res) => {
@@ -52,25 +66,31 @@ timeLogRouter.get('/logs/:user',authMiddleware, async (req, res) => {
 })
 
 // @ts-ignore
-timeLogRouter.get('/logs',authMiddleware, async (req,res)=>{
-   try{
-       if(req.user?.role !== "admin"){
-           return res.status(403).json({error:"Unauthorized !"});
-       }
+timeLogRouter.get('/logs', authMiddleware, async (req, res) => {
+    try {
+        if (req.user?.role !== "admin") {
+            return res.status(403).json({ error: "Unauthorized!" });
+        }
 
-       const logs = await TimeLog.find()
-           .populate({path : 'user', select : 'userName id'})
-           .populate({path : 'project', select : 'name id'})
-           .populate({path : 'task', select : 'name id'})
-           .sort({date : -1}).lean();
+        const logs = await TimeLog.find()
+            .populate({ path: 'user', select: 'userName id' })
+            .populate({ path: 'project', select: 'name id' })
+            .populate({ path: 'task', select: 'title id' })
+            .sort({ date: -1 })
+            .lean();
 
-       console.log(logs);
 
-       return res.status(200).json(logs);
-   }catch (e){
+        console.log(logs);
+        // Filter out logs with missing project or task data
+        const validLogs = logs.filter(log => log.project && log.task);
 
-   }
-})
+        return res.status(200).json(validLogs);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 /*
 import { Router } from 'express';
 import TimeLog from './time_log';

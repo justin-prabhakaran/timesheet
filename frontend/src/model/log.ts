@@ -14,7 +14,7 @@ export interface Log{
 
     task : {
         id : string;
-        name : string;
+        title : string;
     },
 
     date : Date,
