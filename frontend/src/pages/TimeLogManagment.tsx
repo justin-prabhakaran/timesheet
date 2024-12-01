@@ -10,39 +10,64 @@ import {
 } from "@/components/ui/select.tsx";
 import {Separator} from "@/components/ui/separator.tsx";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table.tsx";
+import {projectStore} from "@/zustand/store/project_store.ts";
+import {taskStore} from "@/zustand/store/task_store.ts";
+import {Task, TaskStatus} from "@/model/task.ts";
+import {useEffect, useState} from "react";
+import {Log} from "@/model/log.ts";
+import {timeLogStore} from "@/zustand/store/timelog_store.ts";
+import {userStore} from "@/zustand/store/user_store.ts";
 
 export default function TimeLogManagement() {
 
-    const logs = [
-        {
-            date : new Date(),
-            project: "Project 1",
-            taks : "Task 1",
-            hrs : 12,
-            status : "pending"
-        },
-        {
-            date : new Date(),
-            project: "Project 1",
-            taks : "Task 1",
-            hrs : 12,
-            status : "pending"
-        },
-        {
-            date : new Date(),
-            project: "Project 1",
-            taks : "Task 1",
-            hrs : 12,
-            status : "pending"
-        },
-        {
-            date : new Date(),
-            project: "Project 1",
-            taks : "Task 1",
-            hrs : 12,
-            status : "pending"
+
+    const projects = projectStore(state => state.projects);
+    const currentUser = userStore(state => state.user);
+    const getTasks = taskStore(state => state.getAllTasks);
+
+    const addLog = timeLogStore(state => state.addTimeLog)
+    const getLogs = timeLogStore(state => state.getLogs)
+    const getUserLogs = timeLogStore(state => state.getUserLogs)
+    const logsStoreDate = timeLogStore(state => state.timelogs);
+
+    const [logs, setLogs] = useState<Log[]>([]);
+    const [tasks, setTasks] =useState<Task[]>([])
+    const [log, setLog] = useState({
+        project : "",
+        task : "",
+        hrs : 0,
+        taskStatus : ""
+    });
+
+    useEffect(() => {
+        if(log.project && log.project != ""){
+            getTasks({
+                token : currentUser?.token || "",
+                projectId : log.project,
+            }).then((tasks)=>{
+                setTasks(tasks)
+            })
         }
-    ]
+    }, [log.project]);
+
+    useEffect(() => {
+        if(currentUser?.role === 'admin'){
+            getLogs({token : currentUser?.token || ""}).then((logss)=>{
+                setLogs([...logs,...logss]);
+            })
+        }else{
+            getUserLogs({token : currentUser?.token || "", user : currentUser?._id || ""}).then((logss)=>{
+                setLogs([...logs,...logss]);
+            })
+        }
+    }, []);
+
+    useEffect(() => {
+        setLogs([...logs,...logsStoreDate])
+    }, [logsStoreDate]);
+
+
+
 
     return (
         <>
@@ -53,28 +78,36 @@ export default function TimeLogManagement() {
                     <div className="flex flex-row justify-start items-end gap-4">
                         <div className="flex flex-col gap-2">
                             <Label>Project</Label>
-                            <Select>
+                            <Select onValueChange={(val)=>{
+                                setLog({...log,project:  val})
+                            }}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Project" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="light">Light</SelectItem>
-                                    <SelectItem value="dark">Dark</SelectItem>
-                                    <SelectItem value="system">System</SelectItem>
+                                    {
+                                        projects.map(project => (
+                                            <SelectItem key={project.id}  value={project.id}>{project.name}</SelectItem>
+                                        ))
+                                    }
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <Label>Project</Label>
-                            <Select>
+                            <Label>Task</Label>
+                            <Select onValueChange={(val)=>{
+                                setLog({...log,task: val})
+                            }}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Task" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="light">Light</SelectItem>
-                                    <SelectItem value="dark">Dark</SelectItem>
-                                    <SelectItem value="system">System</SelectItem>
+                                    {
+                                        tasks.map(task => (
+                                            <SelectItem key={task.id} value={task.id}>{task.title}</SelectItem>
+                                        ))
+                                    }
                                 </SelectContent>
                             </Select>
                         </div>
@@ -82,6 +115,10 @@ export default function TimeLogManagement() {
                         <div className="flex flex-col gap-2">
                             <Label htmlFor="expectedhr">Expected Hours</Label>
                             <Input
+                                value={log.hrs}
+                                onChange={(e)=>{
+                                    setLog({...log,hrs: Number.parseInt(e.target.value)})
+                                }}
                                 id="expectedhr"
                                 type="number"
                                 placeholder="Ex.12"
@@ -90,20 +127,36 @@ export default function TimeLogManagement() {
 
                         <div className="flex flex-col gap-2">
                             <Label>Status</Label>
-                            <Select>
+                            <Select onValueChange={(val)=>{
+                                setLog({...log,taskStatus: val})
+                            }}>
                                 <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Theme" />
+                                    <SelectValue placeholder="status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="light">Light</SelectItem>
-                                    <SelectItem value="dark">Dark</SelectItem>
-                                    <SelectItem value="system">System</SelectItem>
+                                    <SelectItem value={TaskStatus.PENDING}>Pending</SelectItem>
+                                    <SelectItem value={TaskStatus.COMPLETED}>Completed</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
 
-                    <Button variant="outline">Add</Button>
+                    <Button onClick={ async ()=>{
+
+                        console.log(log);
+
+                       const status =  await addLog({
+                           token : currentUser?.token || "",
+                           task : log.task,
+                           project : log.project,
+                           taskStatus : log.taskStatus,
+                           date : new Date(),
+                           hoursSpent : log.hrs
+                       });
+
+                       console.log(status);
+
+                    }} type={"button"} variant="outline">Add</Button>
                 </div>
                 <Separator  orientation={"horizontal"} />
 
@@ -122,11 +175,11 @@ export default function TimeLogManagement() {
                             {
                                logs.map((log, index) => (
                                    <TableRow key={index}>
-                                       <TableCell>{log.date.toDateString()}</TableCell>
-                                       <TableCell>{log.project}</TableCell>
-                                       <TableCell>{log.taks}</TableCell>
-                                       <TableCell>{log.hrs}</TableCell>
-                                       <TableCell>{log.status}</TableCell>
+                                       <TableCell>{new Date(log.date).toDateString()}</TableCell>
+                                       <TableCell>{log.project.name}</TableCell>
+                                       <TableCell>{log.task.name}</TableCell>
+                                       <TableCell>{log.hoursSpent}</TableCell>
+                                       <TableCell>{log.taskStatus}</TableCell>
 
                                    </TableRow>
                                ))

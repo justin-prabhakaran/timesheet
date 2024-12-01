@@ -12,30 +12,25 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select.tsx";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover.tsx";
+import {User} from "@/model/user.ts";
+import {userStore} from "@/zustand/store/user_store.ts";
 
 export default function UserManagementPage() {
 
     const [isShowFilter, setShowFilter] = useState<boolean>(false);
 
-    const users = [
-        {
-            name: "Alice",
-            department: "CSE",
-            businessGroup: 1,
-        },
-        {
-            name: "Bob",
-            department: "CSE",
-            businessGroup: 1,
-        },
-        {
-            name: "Charlie",
-            department: "CSE",
-            businessGroup: 1,
-        },
-    ];
+    const getAllUser = userStore(state => state.getAllUsers);
+    const currentUser = userStore(state => state.user);
+    const [users, setUsers] = useState<User[]>([]);
+
+    useEffect(() => {
+        getAllUser(currentUser?.token || "").then((users)=>{
+            setUsers(users);
+        })
+    }, []);
+
 
     return (
         <>
@@ -96,7 +91,7 @@ export default function UserManagementPage() {
                         <Card key={index} className={"shadow-sw hover:shadow-md transition-shadow"}>
                             <CardHeader>
                                 <div className={"flex flex-row items-center justify-between"}>
-                                    <h1 className={"font-bold text-2xl"}>{user.name}</h1>
+                                    <h1 className={"font-bold text-2xl"}>{user.userName}</h1>
                                     <Popover>
                                         <PopoverTrigger>
                                             <BsThreeDotsVertical />
@@ -112,7 +107,7 @@ export default function UserManagementPage() {
                             </CardHeader>
                             <CardContent>
                                 <h1 className={"font-normal text-1xl"}>Department : {user.department}</h1>
-                                <h1 className={"font-thin text-1xl"}>Business group: {user.businessGroup}</h1>
+                                <h1 className={"font-thin text-1xl"}>Business group: {user.businessUnit}</h1>
                             </CardContent>
                         </Card>
                     ))}

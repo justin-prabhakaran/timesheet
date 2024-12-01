@@ -12,6 +12,13 @@ export const taskStore = create<TaskStoreType>((set)=>(
     {
         tasks : [],
         addTask: async ({token,title,description,projectId,status,expectedHours,actualHours} : {token : string,title : string,description : string,projectId : string,status : string,expectedHours : number,actualHours : number}) => {
+            console.log(  title,
+                description,
+                projectId,
+                status,
+                expectedHours,
+                actualHours)
+
             const response = await axios.post<Task>('http://localhost:3003/api/task/add/',{
                 title,
                 description,

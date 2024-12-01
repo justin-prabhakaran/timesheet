@@ -29,8 +29,8 @@ const timeLogSchema = new mongoose.Schema(
         },
         taskStatus: {
             type: String,
-            enum: ['in-progress', 'completed'],
-            default: 'in-progress',
+            enum: ['pending', 'completed'],
+            default: 'pending',
         },
     },
     {

@@ -16,7 +16,7 @@ timeLogRouter.post("/add",authMiddleware, async (req, res) => {
             task,
             date: date || new Date(),
             hoursSpent,
-            taskStatus: taskStatus || 'In Progress',
+            taskStatus: taskStatus || 'progress',
         });
         return res.status(200).json(newLog);
 
@@ -36,11 +36,14 @@ timeLogRouter.get('/logs/:user',authMiddleware, async (req, res) => {
         }
 
         const logs = await TimeLog.find({user})
-            .populate({path : 'project', select : 'name createdAt'})
-            .populate({path : 'task', select : 'name createdAt'})
-            .sort({date : -1});
+            .populate({path : 'user', select : 'userName id'})
+            .populate({path : 'project', select : 'name id'})
+            .populate({path : 'task', select : 'title id'})
+            .sort({date : -1}).lean();
 
-         return res.status(200).json({logs});
+        console.log(logs);
+
+         return res.status(200).json(logs);
     }catch (e) {
         console.error(e);
          res.status(500).json({error : "Internal Server Error !!"});
@@ -56,11 +59,14 @@ timeLogRouter.get('/logs',authMiddleware, async (req,res)=>{
        }
 
        const logs = await TimeLog.find()
-           .populate({path : 'user', select : 'userName businessUnit id'})
+           .populate({path : 'user', select : 'userName id'})
            .populate({path : 'project', select : 'name id'})
-           .populate({path : 'task', select : 'name status id'})
-           .sort({date : -1});
-       return res.status(200).json({logs});
+           .populate({path : 'task', select : 'name id'})
+           .sort({date : -1}).lean();
+
+       console.log(logs);
+
+       return res.status(200).json(logs);
    }catch (e){
 
    }
