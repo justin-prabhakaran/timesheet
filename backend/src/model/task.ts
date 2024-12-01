@@ -13,7 +13,7 @@ const taskSchema = new Schema(
         },
         status: {
             type: String,
-            enum: ['completed', 'pending', 'in-progress'],
+            enum: ['completed', 'pending'],
             default: 'pending',
         },
         expectedHours: {
@@ -26,7 +26,7 @@ const taskSchema = new Schema(
             min: 0,
             default: 0,
         },
-        project: {
+        projectId: {
             type: Schema.Types.ObjectId,
             ref: 'Project',
             required: true,

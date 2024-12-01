@@ -13,29 +13,36 @@ import {Separator} from "@/components/ui/separator.tsx";
 import {Card, CardContent, CardDescription, CardHeader} from "@/components/ui/card.tsx";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover.tsx";
 import {BsThreeDotsVertical} from "react-icons/bs";
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import {Project} from "@/model/project.ts";
+import {projectStore} from "@/zustand/store/project_store.ts";
+import {userStore} from "@/zustand/store/user_store.ts";
+import {useNavigate} from "react-router-dom";
 
 export function ProjectManagement() {
 
     const [isShowFilter, setShowFilter] = useState<boolean>(false);
 
-    const projects = [
-        {
-            name: "Alice",
-            department: "CSE",
-            businessGroup: 1,
-        },
-        {
-            name: "Bob",
-            department: "CSE",
-            businessGroup: 1,
-        },
-        {
-            name: "Charlie",
-            department: "CSE",
-            businessGroup: 1,
-        },
-    ];
+    const [projects, setProjects] = useState<Project[]>([]);
+
+    const getAllProjects = projectStore((state) => state.getAllProjects);
+    const deleteProject = projectStore(state => state.removeProject);
+
+    const projectsFromStore = projectStore(state => state.projects);
+    const user = userStore((state) => state.user);
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        getAllProjects('',user?.token || '').then((projects)=>{
+            setProjects(projects);
+        });
+    }, [getAllProjects, user?.token]);
+
+    useEffect(() => {
+        setProjects(projectsFromStore);
+    }, [projectsFromStore]);
+
 
 
     return (
@@ -88,13 +95,14 @@ export function ProjectManagement() {
 
                 <div className="flex flex-row justify-between items-center px-4 mt-2">
                     <h2 className="text-lg font-semibold">Project Management</h2>
-                    <Button>Add Project</Button>
+                    <Button onClick={()=>{
+                        navigate('/edit/new');
+                    }}>Add Project</Button>
                 </div>
 
                 <div className="px-4 py-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {projects.map((project, index) => (
-
                             <Card key={index} className={"shadow-sw hover:shadow-md transition-shadow"}>
                                 <CardHeader>
                                     <div className={"flex flex-row items-center justify-between"}>
@@ -104,9 +112,15 @@ export function ProjectManagement() {
                                                 <BsThreeDotsVertical />
                                             </PopoverTrigger>
                                             <PopoverContent className={"w-max"}>
-                                                <h1 className={"hover:cursor-pointer"}>edit</h1>
+                                                <h1 onClick={()=>{
+                                                    navigate(`/edit/${project.id}`)
+                                                }}  className={"hover:cursor-pointer"}>edit</h1>
 
-                                                <h1 className={"hover:cursor-pointer"}>delete</h1>
+                                                <h1 onClick={async ()=>{
+                                                   const status =  await deleteProject(user?.token || "", project.id);
+
+                                                   console.log(status);
+                                                }} className={"hover:cursor-pointer"}>delete</h1>
                                             </PopoverContent>
                                         </Popover>
 
@@ -116,7 +130,7 @@ export function ProjectManagement() {
                                 </CardHeader>
                                 <CardContent>
                                     <h1 className={"font-normal text-1xl"}>Department : {project.department}</h1>
-                                    <h1 className={"font-thin text-1xl"}>Business group: {project.businessGroup}</h1>
+                                    <h1 className={"font-thin text-1xl"}>Business group: {project.businessUnit}</h1>
                                 </CardContent>
                             </Card>
                         ))}

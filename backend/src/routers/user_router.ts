@@ -6,11 +6,8 @@ import authMiddleware from "../middleware/auth_middleware";
 const userRouter = Router();
 
 // @ts-ignore
-userRouter.post('/register',authMiddleware,async (req,res)=>{
+userRouter.post('/register',async (req,res)=>{
    try{
-       if(req.user?.role !== "admin"){
-           return res.status(403).json({error:"Unauthorized !"});
-       }
        const {userName, password, department, businessUnit, role} = req.body;
 
 
@@ -23,12 +20,14 @@ userRouter.post('/register',authMiddleware,async (req,res)=>{
            role
        });
 
-       await user.save();
+       console.log(user);
 
-       const token = jwt.sign({id : user.id, role : user.role},process.env.SECRET_KEY!,{expiresIn : "1h"});
+
+
+       const token = jwt.sign({id : user._id, role : user.role},process.env.SECRET_KEY || "secret",{expiresIn : "1h"});
 
        const {password : _, ...others}= user.toObject()
-
+       await user.save();
        return res.status(200).json({...others,token})
    }catch (e) {
         console.error(e);
@@ -43,7 +42,6 @@ userRouter.post('/login', async (req,res)=>{
     try{
         const {userName, password} = req.body;
         const user = await User.findOne({userName});
-
         if(!user){
             return res.status(401).json({error : "User Not Found"});
         }
@@ -53,7 +51,7 @@ userRouter.post('/login', async (req,res)=>{
             return res.status(401).json({error : "User Not Found"});
         }
 
-        const token = jwt.sign({id : user.id, role : user.role},process.env.SECRET_KEY!,{expiresIn : "1h"});
+        const token = jwt.sign({id : user.id, role : user.role},process.env.SECRET_KEY || "secret",{expiresIn : "1h"});
 
         const {password : _, ...others} = user.toObject();
 
@@ -85,11 +83,7 @@ userRouter.get('/users',authMiddleware, async (req,res)=>{
             createdAt: user.createdAt
         }));
 
-        return res.status(200).json({
-            message: "Users retrieved successfully",
-            total: filtered.length,
-            users: filtered
-        });
+        return res.status(200).json(filtered);
 
     }catch (e){
         console.error(e);
@@ -165,4 +159,4 @@ userRouter.delete('/delete/:id',authMiddleware, async (req,res)=>{
 });
 
 
-
+export default userRouter;

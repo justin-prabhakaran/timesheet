@@ -1,4 +1,4 @@
-import {Router} from "express";
+import { Router } from "express";
 import authMiddleware from "../middleware/auth_middleware";
 import Task from "../model/task";
 import Project from "../model/project";
@@ -6,64 +6,39 @@ import Project from "../model/project";
 const taskRouter = Router();
 
 // @ts-ignore
-taskRouter.get('/tasks/:project',authMiddleware,async (req,res)=>{
+taskRouter.get('/tasks/:projectId', authMiddleware, async (req, res) => {
     try {
-        const {project} = req.params;
+        const { projectId } = req.params;
 
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
-        const skip = (page - 1) * limit;
+        // Find tasks for the given projectId
+        const tasks = await Task.find({ projectId }).lean();
 
-        const filter: any = { project };
-
-        if (req.query.status) {
-            filter.status = req.query.status;
-        }
-
-        const totalTasks = await Task.countDocuments(filter);
-
-        const tasks = await Task.find(filter)
-            .skip(skip)
-            .limit(limit)
-            .sort({ createdAt: -1 })
-            .lean();
-
-        return res.status(200).json({
-            total: totalTasks,
-            page,
-            totalPages: Math.ceil(totalTasks / limit),
-            tasks: tasks.map(task => ({
+        // Return tasks with `id` field derived from `_id`
+        return res.status(200).json(
+            tasks.map(task => ({
                 id: task._id,
                 title: task.title,
                 description: task.description,
                 status: task.status,
                 expectedHours: task.expectedHours,
                 actualHours: task.actualHours,
-                projectId: task.project
+                projectId: task.projectId,
             }))
-        });
-
-    }catch (e) {
+        );
+    } catch (e) {
         console.error(e);
-        return res.status(500).json({error :"Internal Server Error !!"})
+        return res.status(500).json({ error: "Internal Server Error !!" });
     }
-})
+});
 
 // @ts-ignore
-taskRouter.post('/task',authMiddleware, async(req,res)=>{
+taskRouter.post('/add', authMiddleware, async (req, res) => {
     try {
         if (req.user?.role !== 'admin') {
             return res.status(403).json({ error: "Unauthorized to create tasks" });
         }
 
-        const {
-            title,
-            description,
-            projectId,
-            status,
-            expectedHours,
-            actualHours
-        } = req.body;
+        const { title, description, projectId, status, expectedHours, actualHours } = req.body;
 
         const project = await Project.findById(projectId);
         if (!project) {
@@ -76,22 +51,16 @@ taskRouter.post('/task',authMiddleware, async(req,res)=>{
             projectId,
             status,
             expectedHours,
-            actualHours
+            actualHours,
         });
 
         await newTask.save();
 
-        return res.status(201).json({
-            task: {
-                id: newTask._id,
-                title: newTask.title,
-                projectId: newTask.project,
-                status: newTask.status
-            }
-        });
-
-    }catch (e) {
+        return res.status(200).json({ id: newTask._id, ...newTask.toObject() });
+    } catch (e) {
         console.error(e);
-        return res.status(500).json({error : "Internal Server Error !!"})
+        return res.status(500).json({ error: "Internal Server Error !!" });
     }
-})
+});
+
+export default taskRouter;

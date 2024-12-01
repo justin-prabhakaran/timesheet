@@ -30,7 +30,7 @@ const authMiddleware = (req:express.Request, res: express.Response, next: expres
 
         const token = header.split(" ")[1];
 
-        const decoded = jwt.verify(token, process.env.SECRET_KEY!) as DecodedToken;
+        const decoded = jwt.verify(token, process.env.SECRET_KEY || "secret") as DecodedToken;
 
         req.user = {
             id : decoded.id,
